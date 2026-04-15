@@ -1,7 +1,7 @@
 package com.ooad.project.collabeditor.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -15,6 +15,8 @@ public class User {
     private String username;
 
     private String email;
+
+    @JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)

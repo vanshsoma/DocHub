@@ -60,7 +60,7 @@ loginBtn.addEventListener('click', async () => {
 logoutBtn.addEventListener('click', () => {
     currentUser = null;
     showView(loginView);
-    if(stompClient) stompClient.disconnect();
+    disconnectWebSocket();
 });
 
 // Dashboard
@@ -81,7 +81,7 @@ async function loadDashboard() {
                 <h3>${doc.title}</h3>
                 ${deleteBtnHtml}
             </div>
-            <p>Author ID: ${doc.owner ? doc.owner.userId : 'Unknown'}</p>
+            <p>Author: ${doc.owner ? doc.owner.username : 'Unknown'}</p>
             <span class="doc-status">${doc.status}</span>
         `;
         card.addEventListener('click', (e) => {
@@ -146,7 +146,7 @@ async function openDocument(docId) {
                 }
             });
             window.cursors = window.quill.getModule('cursors');
-            window.myColor = '#' + Math.floor(Math.random()*16777215).toString(16).padEnd(6, '0');
+            window.myColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
             setupQuillEvents();
         }
         
@@ -156,12 +156,17 @@ async function openDocument(docId) {
         versionDisplay.innerText = `Version: ${documentVersion}`;
         
         // Disconnect existing socket before opening a new document connection
-        if (typeof stompClient !== 'undefined' && stompClient !== null) {
-            try { stompClient.disconnect(); } catch (e) {}
-        }
+        disconnectWebSocket();
         
         // Connect WS
         connectWebSocket();
+    }
+}
+
+function disconnectWebSocket() {
+    if (stompClient !== null) {
+        try { stompClient.disconnect(); } catch (e) { /* ignore */ }
+        stompClient = null;
     }
 }
 
@@ -175,14 +180,15 @@ function connectWebSocket() {
 
     stompClient.connect({}, function (frame) {
         syncStatus.innerText = '● Connected';
+        syncStatus.className = 'sync-status';
+        console.log('WebSocket connected:', frame);
         
-        // Subscribe to document updates
+        // Subscribe to document updates (version tracking / persistence confirmation)
         stompClient.subscribe(`/topic/document/${currentDocument.documentId}`, function (message) {
             const data = JSON.parse(message.body);
             if (data.status === 'SUCCESS') {
                 documentVersion = data.newVersion;
                 versionDisplay.innerText = `Version: ${documentVersion}`;
-                // No longer overwriting active HTML here! Real-time syncing is now handled by OT Deltas below!
             } else if (data.status === 'CONFLICT') {
                 showToast("Conflict detected! Reloading document to get latest edits.");
                 openDocument(currentDocument.documentId);
@@ -193,12 +199,17 @@ function connectWebSocket() {
         stompClient.subscribe(`/topic/document.cursor/${currentDocument.documentId}`, function (message) {
             const data = JSON.parse(message.body);
             if (data.username !== currentUser.username) {
-                // Register cursor if it doesn't exist
-                if (!window.cursors.cursors()[data.username]) {
-                    window.cursors.createCursor(data.username, data.username, data.color);
+                try {
+                    // cursors() returns an array of cursor objects, each with an .id property
+                    const existingCursors = window.cursors.cursors();
+                    const found = existingCursors.some(c => c.id === data.username);
+                    if (!found) {
+                        window.cursors.createCursor(data.username, data.username, data.color);
+                    }
+                    window.cursors.moveCursor(data.username, { index: data.index, length: 0 });
+                } catch (e) {
+                    console.warn('Cursor update failed:', e);
                 }
-                // Move cursor
-                window.cursors.moveCursor(data.username, { index: data.index, length: 0 });
             }
         });
         
@@ -206,8 +217,12 @@ function connectWebSocket() {
         stompClient.subscribe(`/topic/document.delta/${currentDocument.documentId}`, function (message) {
             const data = JSON.parse(message.body);
             if (data.userId !== currentUser.userId) {
-                const deltaObj = JSON.parse(data.deltaJson);
-                window.quill.updateContents(deltaObj, 'api');
+                try {
+                    const deltaObj = JSON.parse(data.deltaJson);
+                    window.quill.updateContents(deltaObj, 'api');
+                } catch (e) {
+                    console.warn('Delta apply failed:', e);
+                }
             }
         });
 
@@ -216,8 +231,17 @@ function connectWebSocket() {
             userId: currentUser.userId
         }));
     }, function(error) {
+        console.error('WebSocket connection error:', error);
         syncStatus.innerText = '● Offline';
         syncStatus.className = 'sync-status offline';
+        showToast('WebSocket disconnected. Trying to reconnect...');
+        
+        // Auto-reconnect after 3 seconds
+        setTimeout(() => {
+            if (currentDocument) {
+                connectWebSocket();
+            }
+        }, 3000);
     });
 }
 
@@ -227,41 +251,51 @@ function setupQuillEvents() {
 
     window.quill.on('text-change', (delta, oldDelta, source) => {
         // Ignore changes triggered by our own 'api' calls
-        if (!stompClient || !currentDocument || source === 'api') return;
+        if (!stompClient || !stompClient.connected || !currentDocument || source === 'api') return;
         
         // Send instantaneous OT Deltas for flawless peer typing visual
-        stompClient.send(`/app/document.delta/${currentDocument.documentId}`, {}, JSON.stringify({
-            userId: currentUser.userId,
-            deltaJson: JSON.stringify(delta)
-        }));
+        try {
+            stompClient.send(`/app/document.delta/${currentDocument.documentId}`, {}, JSON.stringify({
+                userId: currentUser.userId,
+                deltaJson: JSON.stringify(delta)
+            }));
+        } catch (e) {
+            console.warn('Failed to send delta:', e);
+        }
         
         clearTimeout(editTimeout);
         editTimeout = setTimeout(() => {
+            if (!stompClient || !stompClient.connected || !currentDocument) return;
             // Send full backup to cleanly persist in the database
-            stompClient.send(`/app/document.edit/${currentDocument.documentId}`, {}, JSON.stringify({
-                userId: currentUser.userId,
-                newContent: window.quill.root.innerHTML,
-                baseVersion: documentVersion
-            }));
+            try {
+                stompClient.send(`/app/document.edit/${currentDocument.documentId}`, {}, JSON.stringify({
+                    userId: currentUser.userId,
+                    newContent: window.quill.root.innerHTML,
+                    baseVersion: documentVersion
+                }));
+            } catch (e) {
+                console.warn('Failed to send edit:', e);
+            }
         }, 800);
     });
 
     // Send cursor movements
     window.quill.on('selection-change', (range) => {
-        if (range && stompClient && currentDocument) {
-            stompClient.send(`/app/document.cursor/${currentDocument.documentId}`, {}, JSON.stringify({
-                username: currentUser.username,
-                color: window.myColor,
-                index: range.index
-            }));
+        if (range && stompClient && stompClient.connected && currentDocument) {
+            try {
+                stompClient.send(`/app/document.cursor/${currentDocument.documentId}`, {}, JSON.stringify({
+                    username: currentUser.username,
+                    color: window.myColor,
+                    index: range.index
+                }));
+            } catch (e) {
+                console.warn('Failed to send cursor:', e);
+            }
         }
     });
 }
 
 backBtn.addEventListener('click', () => {
-    if(stompClient) {
-        stompClient.disconnect();
-        stompClient = null;
-    }
+    disconnectWebSocket();
     loadDashboard();
 });
