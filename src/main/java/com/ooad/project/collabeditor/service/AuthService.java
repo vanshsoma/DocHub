@@ -14,14 +14,15 @@ public class AuthService {
     @Autowired
     private UserRepository userRepository;
 
+    /** Observer Pattern — publish events instead of calling ActivityTracker directly */
     @Autowired
-    private ActivityTracker activityTracker;
+    private EventPublisher eventPublisher;
 
     public User authenticate(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent() && userOpt.get().getPassword().equals(password)) {
             User user = userOpt.get();
-            activityTracker.logEvent("LOGIN", user, null);
+            eventPublisher.publish("LOGIN", user, null);
             return user;
         }
         return null;

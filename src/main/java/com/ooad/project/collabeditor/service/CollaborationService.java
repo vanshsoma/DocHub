@@ -23,8 +23,9 @@ public class CollaborationService {
     @Autowired
     private DocumentService documentService;
 
+    /** Observer Pattern — publish events through Subject instead of calling ActivityTracker directly */
     @Autowired
-    private ActivityTracker activityTracker;
+    private EventPublisher eventPublisher;
 
     /**
      * Attempts to apply an edit. Returns the updated version if successful, or -1 if conflicted.
@@ -50,7 +51,7 @@ public class CollaborationService {
             // Record operation anyway
             EditOperation op = new EditOperation(doc, user, newContent, doc.getVersion());
             editOperationRepository.save(op);
-            activityTracker.logEvent("EDIT", user, documentId);
+            eventPublisher.publish("EDIT", user, documentId);
             
             return doc.getVersion();
         }
@@ -63,7 +64,7 @@ public class CollaborationService {
         EditOperation op = new EditOperation(doc, user, newContent, doc.getVersion());
         editOperationRepository.save(op);
 
-        activityTracker.logEvent("EDIT", user, documentId);
+        eventPublisher.publish("EDIT", user, documentId);
 
         return doc.getVersion();
     }

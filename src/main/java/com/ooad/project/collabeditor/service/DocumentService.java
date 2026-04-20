@@ -22,13 +22,14 @@ public class DocumentService {
     @Autowired
     private EditOperationRepository editOperationRepository;
 
+    /** Observer Pattern — publish events through Subject instead of calling ActivityTracker directly */
     @Autowired
-    private ActivityTracker activityTracker;
+    private EventPublisher eventPublisher;
 
     public Document createDocument(String title, String initialContent, User owner) {
         Document document = new Document(title, initialContent, owner);
         document = documentRepository.save(document);
-        activityTracker.logEvent("CREATE_DOCUMENT", owner, document.getDocumentId());
+        eventPublisher.publish("CREATE_DOCUMENT", owner, document.getDocumentId());
         return document;
     }
 
@@ -51,7 +52,7 @@ public class DocumentService {
             if (doc.getStatus() == DocumentStatus.DRAFT || doc.getStatus() == DocumentStatus.EDITING) {
                 doc.setStatus(DocumentStatus.EDITING);
                 saveDocument(doc);
-                activityTracker.logEvent("OPEN_DOCUMENT", user, documentId);
+                eventPublisher.publish("OPEN_DOCUMENT", user, documentId);
             }
         }
     }
@@ -69,7 +70,7 @@ public class DocumentService {
         docOpt.ifPresent(doc -> {
             doc.setStatus(DocumentStatus.ARCHIVED);
             saveDocument(doc);
-            activityTracker.logEvent("ARCHIVE_DOCUMENT", adminUser, documentId);
+            eventPublisher.publish("ARCHIVE_DOCUMENT", adminUser, documentId);
         });
     }
 

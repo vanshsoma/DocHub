@@ -1,8 +1,8 @@
 package com.ooad.project.collabeditor.config;
 
 import com.ooad.project.collabeditor.model.Document;
-import com.ooad.project.collabeditor.model.Role;
 import com.ooad.project.collabeditor.model.User;
+import com.ooad.project.collabeditor.model.UserFactory;
 import com.ooad.project.collabeditor.repository.DocumentRepository;
 import com.ooad.project.collabeditor.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +21,11 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (userRepository.count() == 0) {
-            User admin = new User("admin", "admin@editor.com", "admin123", Role.ADMIN);
-            User editor1 = new User("editor1", "editor1@editor.com", "pass", Role.EDITOR);
-            User editor2 = new User("editor2", "editor2@editor.com", "pass", Role.EDITOR);
-            User editor3 = new User("editor3", "editor3@editor.com", "pass", Role.EDITOR);
+            // Factory Method Pattern — UserFactory creates Users with the correct role baked in
+            User admin   = UserFactory.createAdmin("admin", "admin@editor.com", "admin123");
+            User editor1 = UserFactory.createEditor("editor1", "editor1@editor.com", "pass");
+            User editor2 = UserFactory.createEditor("editor2", "editor2@editor.com", "pass");
+            User editor3 = UserFactory.createEditor("editor3", "editor3@editor.com", "pass");
 
             userRepository.save(admin);
             userRepository.save(editor1);
