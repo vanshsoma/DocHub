@@ -1,8 +1,6 @@
 package com.ooad.project.collabeditor.controller;
 
-import com.ooad.project.collabeditor.model.User;
-import com.ooad.project.collabeditor.repository.UserRepository;
-import com.ooad.project.collabeditor.service.CollaborationService;
+import com.ooad.project.collabeditor.service.CollaborationFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -18,11 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Controller
 public class WebSocketController {
 
+    /** Facade (Structural Pattern) — single entry point to the collaboration subsystem */
     @Autowired
-    private CollaborationService collaborationService;
-    
-    @Autowired
-    private UserRepository userRepository;
+    private CollaborationFacade collaborationFacade;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -71,20 +67,18 @@ public class WebSocketController {
     @MessageMapping("/document.edit/{documentId}")
     @SendTo("/topic/document/{documentId}")
     public SyncMessage processEdit(@DestinationVariable Long documentId, @Payload EditMessage msg) {
-        User user = userRepository.findById(msg.userId).orElse(null);
-        if (user == null) {
+        // Facade handles user resolution + edit application in one call
+        int result = collaborationFacade.handleEdit(documentId, msg.userId, msg.newContent, msg.baseVersion);
+
+        if (result == -2) {
             return new SyncMessage("ERROR", "User not found", msg.baseVersion, msg.userId);
         }
-
-        int newVersion = collaborationService.applyEdit(documentId, user, msg.newContent, msg.baseVersion);
-        
-        if (newVersion == -1) {
-            // True Conflict (if locked/archived)
+        if (result == -1) {
+            // Conflict (document locked/archived)
             return new SyncMessage("CONFLICT", msg.newContent, msg.baseVersion, msg.userId);
         }
-
         // Successfully applied edit
-        return new SyncMessage("SUCCESS", msg.newContent, newVersion, msg.userId);
+        return new SyncMessage("SUCCESS", msg.newContent, result, msg.userId);
     }
 
     @MessageMapping("/document.delta/{documentId}")
