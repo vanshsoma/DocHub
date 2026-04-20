@@ -2,10 +2,10 @@ package com.ooad.project.collabeditor.service;
 
 import com.ooad.project.collabeditor.model.Document;
 import com.ooad.project.collabeditor.model.DocumentStatus;
+import com.ooad.project.collabeditor.model.EditOperation;
 import com.ooad.project.collabeditor.model.User;
 import com.ooad.project.collabeditor.repository.DocumentRepository;
 import com.ooad.project.collabeditor.repository.EditOperationRepository;
-import com.ooad.project.collabeditor.model.EditOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,12 +23,12 @@ public class DocumentService {
     private EditOperationRepository editOperationRepository;
 
     @Autowired
-    private ActivityTracker activityTracker;
+    private ActivitySubject activitySubject;
 
     public Document createDocument(String title, String initialContent, User owner) {
         Document document = new Document(title, initialContent, owner);
         document = documentRepository.save(document);
-        activityTracker.logEvent("CREATE_DOCUMENT", owner, document.getDocumentId());
+        activitySubject.publishEvent("CREATE_DOCUMENT", owner, document.getDocumentId());
         return document;
     }
 
@@ -51,7 +51,7 @@ public class DocumentService {
             if (doc.getStatus() == DocumentStatus.DRAFT || doc.getStatus() == DocumentStatus.EDITING) {
                 doc.setStatus(DocumentStatus.EDITING);
                 saveDocument(doc);
-                activityTracker.logEvent("OPEN_DOCUMENT", user, documentId);
+                activitySubject.publishEvent("OPEN_DOCUMENT", user, documentId);
             }
         }
     }
@@ -69,7 +69,7 @@ public class DocumentService {
         docOpt.ifPresent(doc -> {
             doc.setStatus(DocumentStatus.ARCHIVED);
             saveDocument(doc);
-            activityTracker.logEvent("ARCHIVE_DOCUMENT", adminUser, documentId);
+            activitySubject.publishEvent("ARCHIVE_DOCUMENT", adminUser, documentId);
         });
     }
 

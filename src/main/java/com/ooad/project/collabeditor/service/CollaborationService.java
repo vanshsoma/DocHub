@@ -24,7 +24,7 @@ public class CollaborationService {
     private DocumentService documentService;
 
     @Autowired
-    private ActivityTracker activityTracker;
+    private ActivitySubject activitySubject;
 
     /**
      * Attempts to apply an edit. Returns the updated version if successful, or -1 if conflicted.
@@ -50,7 +50,7 @@ public class CollaborationService {
             // Record operation anyway
             EditOperation op = new EditOperation(doc, user, newContent, doc.getVersion());
             editOperationRepository.save(op);
-            activityTracker.logEvent("EDIT", user, documentId);
+            activitySubject.publishEvent("EDIT", user, documentId);
             
             return doc.getVersion();
         }
@@ -63,7 +63,7 @@ public class CollaborationService {
         EditOperation op = new EditOperation(doc, user, newContent, doc.getVersion());
         editOperationRepository.save(op);
 
-        activityTracker.logEvent("EDIT", user, documentId);
+        activitySubject.publishEvent("EDIT", user, documentId);
 
         return doc.getVersion();
     }

@@ -15,13 +15,13 @@ public class AuthService {
     private UserRepository userRepository;
 
     @Autowired
-    private ActivityTracker activityTracker;
+    private ActivitySubject activitySubject;
 
     public User authenticate(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent() && userOpt.get().getPassword().equals(password)) {
             User user = userOpt.get();
-            activityTracker.logEvent("LOGIN", user, null);
+            activitySubject.publishEvent("LOGIN", user, null);
             return user;
         }
         return null;
