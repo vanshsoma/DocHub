@@ -73,21 +73,13 @@ src/main/resources/
    cd DocHub
    ```
 
-2. **Configure database** (if using MySQL)
-   - Open `src/main/resources/application.properties`
-   - Update database connection details:
-     ```properties
-     spring.datasource.url=jdbc:mysql://localhost:3306/collabeditor
-     spring.datasource.username=your_username
-     spring.datasource.password=your_password
-     ```
 
-3. **Build the project**
+2. **Build the project**
    ```bash
    mvn clean install
    ```
 
-4. **Run the application**
+3. **Run the application**
    ```bash
    mvn spring-boot:run
    ```
@@ -96,7 +88,7 @@ src/main/resources/
    java -jar target/collabeditor-0.0.1-SNAPSHOT.jar
    ```
 
-5. **Access the application**
+4. **Access the application**
    - Open your browser and navigate to `http://localhost:8080`
 
 ## API Documentation
