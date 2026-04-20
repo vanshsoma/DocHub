@@ -66,6 +66,13 @@ logoutBtn.addEventListener('click', () => {
 // Dashboard
 async function loadDashboard() {
     showView(dashboardView);
+    // Show admin button only for ADMIN users
+    const adminBtn = document.getElementById('admin-panel-btn');
+    if (currentUser && currentUser.role === 'ADMIN') {
+        adminBtn.style.display = 'inline-block';
+    } else {
+        adminBtn.style.display = 'none';
+    }
     const res = await fetch('/api/documents');
     const docs = await res.json();
     docList.innerHTML = '';
@@ -299,3 +306,57 @@ backBtn.addEventListener('click', () => {
     disconnectWebSocket();
     loadDashboard();
 });
+
+// ===== ADMIN PANEL =====
+const adminView    = document.getElementById('admin-view');
+const adminPanelBtn = document.getElementById('admin-panel-btn');
+const adminBackBtn  = document.getElementById('admin-back-btn');
+
+adminPanelBtn.addEventListener('click', () => loadAdminPanel());
+adminBackBtn.addEventListener('click', () => loadDashboard());
+
+async function loadAdminPanel() {
+    showView(adminView);
+
+    // Load metrics
+    const metricsRes = await fetch(`/api/admin/metrics?userId=${currentUser.userId}`);
+    if (metricsRes.ok) {
+        const metrics = await metricsRes.json();
+        const metricDefs = [
+            { key: 'totalEvents',  label: 'Total Events',   icon: '📊' },
+            { key: 'logins',       label: 'Logins',         icon: '🔑' },
+            { key: 'edits',        label: 'Edits',          icon: '✏️' },
+            { key: 'creates',      label: 'Docs Created',   icon: '📄' },
+            { key: 'archives',     label: 'Archived',       icon: '📦' },
+            { key: 'opens',        label: 'Doc Opens',      icon: '👁' },
+        ];
+        const grid = document.getElementById('metrics-grid');
+        grid.innerHTML = metricDefs.map(d => `
+            <div class="metric-card">
+                <div class="metric-icon">${d.icon}</div>
+                <div class="metric-value">${metrics[d.key] ?? 0}</div>
+                <div class="metric-label">${d.label}</div>
+            </div>
+        `).join('');
+    }
+
+    // Load activity log
+    const eventsRes = await fetch(`/api/admin/activity?userId=${currentUser.userId}`);
+    if (eventsRes.ok) {
+        const events = await eventsRes.json();
+        const tbody = document.getElementById('activity-log-body');
+        if (events.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 2rem;">No activity yet.</td></tr>`;
+        } else {
+            tbody.innerHTML = events.map((e, i) => `
+                <tr>
+                    <td style="color: var(--text-muted);">${i + 1}</td>
+                    <td><span class="event-badge ${e.eventType}">${e.eventType.replace('_', ' ')}</span></td>
+                    <td>${e.user ? e.user.username : '—'}</td>
+                    <td>${e.relatedDocumentId !== null ? '#' + e.relatedDocumentId : '—'}</td>
+                    <td style="color: var(--text-muted); font-size: 0.82rem;">${new Date(e.timestamp).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+    }
+}

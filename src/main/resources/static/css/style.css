@@ -330,3 +330,72 @@ button {
 @keyframes slideInFade { 0% { transform: translateX(120%) scale(0.9); opacity: 0; } 100% { transform: translateX(0) scale(1); opacity: 1; } }
 .toast button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.25rem; padding: 0.25rem; margin: 0; line-height: 1; border-radius: 4px; transition: color 0.2s, background 0.2s;}
 .toast button:hover { color: white; background: rgba(255,255,255,0.1); }
+
+/* ===== ADMIN PANEL STYLES ===== */
+.user-info { display: flex; align-items: center; gap: 1rem; }
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.metric-card {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-radius: 16px;
+    background: var(--card-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease;
+}
+.metric-card:hover { transform: translateY(-3px); }
+.metric-card .metric-icon { font-size: 1.75rem; }
+.metric-card .metric-value { font-size: 2.25rem; font-weight: 700; font-family: 'Outfit', sans-serif; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.metric-card .metric-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.activity-table thead tr {
+    background: rgba(139, 92, 246, 0.1);
+    border-bottom: 1px solid var(--border-color);
+}
+.activity-table th {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.activity-table td {
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+.activity-table tbody tr:last-child td { border-bottom: none; }
+.activity-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+.event-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.event-badge.LOGIN       { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+.event-badge.EDIT        { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
+.event-badge.CREATE_DOCUMENT { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+.event-badge.ARCHIVE_DOCUMENT { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+.event-badge.OPEN_DOCUMENT   { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+

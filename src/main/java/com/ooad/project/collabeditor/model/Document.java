@@ -11,7 +11,7 @@ public class Document {
     private Long documentId;
 
     private String title;
-    
+
     @Lob
     private String content;
 
@@ -38,24 +38,54 @@ public class Document {
     }
 
     // Getters and Setters
-    public Long getDocumentId() { return documentId; }
-    public void setDocumentId(Long documentId) { this.documentId = documentId; }
+    public Long getDocumentId() {
+        return documentId;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setDocumentId(Long documentId) {
+        this.documentId = documentId;
+    }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public String getTitle() {
+        return title;
+    }
 
-    public int getVersion() { return version; }
-    public void setVersion(int version) { this.version = version; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public DocumentStatus getStatus() { return status; }
-    public void setStatus(DocumentStatus status) { this.status = status; }
+    public String getContent() {
+        return content;
+    }
 
-    public User getOwner() { return owner; }
-    public void setOwner(User owner) { this.owner = owner; }
-    
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public DocumentStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(DocumentStatus status) {
+        this.status = status;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
     public void updateContent(String newContent) {
         this.content = newContent;
         this.version++;

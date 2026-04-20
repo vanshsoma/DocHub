@@ -40,6 +40,7 @@
             <div class="logo">DOC<span>HUB</span></div>
             <div class="user-info">
                 <span id="welcome-user"></span>
+                <button id="admin-panel-btn" class="secondary-btn" style="display:none;">⚙ Admin Panel</button>
                 <button id="logout-btn" class="secondary-btn">Logout</button>
             </div>
         </header>
@@ -52,6 +53,42 @@
             
             <div class="document-grid" id="document-list">
                 <!-- Dynamically populated -->
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== ADMIN PANEL VIEW ===== -->
+    <div id="admin-view" class="view">
+        <header class="glass-header">
+            <button id="admin-back-btn" class="secondary-btn">← Back to Dashboard</button>
+            <div class="logo">DOC<span>HUB</span> <span style="font-size:0.9rem; color: var(--text-muted);">Admin Panel</span></div>
+            <div></div>
+        </header>
+
+        <main class="dashboard-content">
+            <!-- Metrics Cards -->
+            <h2 style="margin-bottom: 1.5rem;">System Metrics</h2>
+            <div id="metrics-grid" class="metrics-grid">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Activity Log Table -->
+            <h2 style="margin: 2.5rem 0 1.25rem;">Activity Log</h2>
+            <div class="glass-panel" style="overflow: hidden;">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Event Type</th>
+                            <th>User</th>
+                            <th>Document ID</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activity-log-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
             </div>
         </main>
     </div>
